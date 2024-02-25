@@ -7,6 +7,7 @@ const cartSchema = new Schema({
   product: {
     type: ObjectId,
     ref: 'products',
+    // 告訴mongoose這個欄位的id是參考products的
     required: [true, '缺少商品欄位']
   },
   quantity: {

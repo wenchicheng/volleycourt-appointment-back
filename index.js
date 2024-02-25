@@ -4,6 +4,7 @@ import mongoose from 'mongoose'
 import cors from 'cors'
 import routeUsers from './routes/users.js'
 import routeProducts from './routes/products.js'
+import routeOrders from './routes/orders.js'
 import routeAppointments from './routes/appointments.js'
 // import routeOrders from './routes/orders.js'
 import { StatusCodes } from 'http-status-codes'
@@ -43,8 +44,8 @@ app.use((_, req, res, next) => {
 
 app.use('/users', routeUsers)
 app.use('/products', routeProducts)
+app.use('/orders', routeOrders)
 app.use('/appointments', routeAppointments)
-// app.use('/orders', routeOrders)
 
 app.all('*', (req, res) => {
   res.status(StatusCodes.NOT_FOUND).json({

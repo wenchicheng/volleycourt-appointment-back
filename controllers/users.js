@@ -131,6 +131,7 @@ export const getProfile = (req, res) => {
 }
 
 // 購物車======================================================================
+
 export const editCart = async (req, res) => {
   try {
     // 檢查商品 id 格式對不對
@@ -141,9 +142,7 @@ export const editCart = async (req, res) => {
     if (idx > -1) {
       // 修改購物車內已有的商品數量
       const quantity = req.user.cart[idx].quantity + parseInt(req.body.quantity)
-      // 檢查數量
-      // 小於 0，移除
-      // 大於 0，修改
+      // 檢查數量，小於 0移除，大於 0修改
       if (quantity <= 0) {
         req.user.cart.splice(idx, 1)
       } else {
@@ -168,7 +167,7 @@ export const editCart = async (req, res) => {
       result: req.user.cartQuantity
     })
   } catch (error) {
-    console.log(error)
+    console.log('editCart error:', error)
     if (error.name === 'CastError' || error.message === 'ID') {
       res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -204,6 +203,7 @@ export const getCart = async (req, res) => {
       result: result.cart
     })
   } catch (error) {
+    console.log(error)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: '未知錯誤'
