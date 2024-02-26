@@ -9,7 +9,6 @@ export const create = async (req, res) => {
     // 檢查有沒有下架商品
     const result = await users.findById(req.user._id, 'cart').populate('cart.product')
     const ok = result.cart.every(item => item.product.sell)
-    // every 是不是陣列的每個東西執行function都會回傳 true (sum是單個)
     if (!ok) throw new Error('SELL')
     // 建立訂單
     await orders.create({
@@ -24,6 +23,7 @@ export const create = async (req, res) => {
       message: ''
     })
   } catch (error) {
+    console.log('create', error)
     if (error.name === 'EMPTY') {
       res.status(StatusCodes.BAD_REQUEST).json({
         success: false,
@@ -59,6 +59,7 @@ export const get = async (req, res) => {
       result
     })
   } catch (error) {
+    console.log('get', error)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: '未知錯誤'
@@ -68,14 +69,14 @@ export const get = async (req, res) => {
 
 export const getAll = async (req, res) => {
   try {
-    const result = await orders.find().populate('user', 'account')
-    // populate('user', 'account') 只取 user 裡面的 account
-      .res.status(StatusCodes.OK).json({
-        success: true,
-        message: '',
-        result
-      })
+    const result = await orders.find().populate('user', 'account').populate('cart.product')
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: '',
+      result
+    })
   } catch (error) {
+    console.log('getAll', error)
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
       success: false,
       message: '未知錯誤'
