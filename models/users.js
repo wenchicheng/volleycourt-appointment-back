@@ -1,7 +1,19 @@
-import { Schema, model, ObjectId, Error } from 'mongoose'
+import { Schema, model, ObjectId, Date, Error } from 'mongoose'
 import validator from 'validator'
 import bcrypt from 'bcrypt'
 import UserRole from '../enums/UserRole.js'
+
+const reservationSchema = new Schema({
+  appointment: {
+    type: ObjectId,
+    ref: 'appointments',
+    required: [true, '缺少預約場次']
+  },
+  quantity: {
+    type: Number,
+    required: [true, '缺少商品數量']
+  }
+})
 
 const cartSchema = new Schema({
   product: {
@@ -49,6 +61,10 @@ const schema = new Schema({
   },
   tokens: {
     type: [String]
+  },
+  reservation: {
+    type: [reservationSchema],
+    default: []
   },
   cart: {
     type: [cartSchema],

@@ -2,6 +2,7 @@ import users from '../models/users.js'
 import { StatusCodes } from 'http-status-codes'
 import jwt from 'jsonwebtoken'
 import products from '../models/products.js'
+import appointments from '../models/appointments.js'
 import validator from 'validator'
 
 // 建立使用者帳號 - 註冊
@@ -211,4 +212,65 @@ export const getCart = async (req, res) => {
   }
 }
 
-// 預約時間======================================================================
+// 編輯預約======================================================================
+export const editReservation = async (req, res) => {
+  try {
+    // 檢查預約 id 格式是否正確
+    if (!validator.isMongoId(req.body.reservationId)) throw new Error('ID')
+
+    // 尋找使用者預約列表中具有傳入的預約ID
+    const idx = req.user.reservation.findIndex(item => item.appointment.toString() === req.body.reservationId)
+    if (idx > -1) {
+      // 修改預約屬性
+      // 這裡假設您需要編輯預約的數量或其他屬性，根據實際需求進行修改
+      req.user.reservation[idx].quantity = req.body.quantity
+    } else {
+      // 如果找不到對應的預約，可能需要處理該情況，例如返回錯誤信息
+      throw new Error('NOT FOUND')
+    }
+    await req.user.save()
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: '預約編輯成功',
+      result: req.user.reservation
+    })
+  } catch (error) {
+    console.log('editReservation error:', error)
+    if (error.name === 'CastError' || error.message === 'ID') {
+      res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message: 'ID 格式錯誤'
+      })
+    } else if (error.message === 'NOT FOUND') {
+      res.status(StatusCodes.NOT_FOUND).json({
+        success: false,
+        message: '未找到預約'
+      })
+    } else {
+      res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+        success: false,
+        message: '未知錯誤'
+      })
+    }
+  }
+}
+
+// 獲取預約列表
+export const getReservation = async (req, res) => {
+  try {
+    // 使用使用者 ID 尋找使用者的預約列表
+    const user = await users.findById(req.user._id, 'cart').populate('reservation.appointment')
+
+    res.status(StatusCodes.OK).json({
+      success: true,
+      message: '',
+      result: user.reservation
+    })
+  } catch (error) {
+    console.log(error)
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+      success: false,
+      message: '未知錯誤'
+    })
+  }
+}

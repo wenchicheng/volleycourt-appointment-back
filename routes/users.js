@@ -1,5 +1,5 @@
 import { Router } from 'express'
-import { create, login, logout, extend, getProfile, editCart, getCart } from '../controllers/users.js'
+import { create, login, logout, extend, getProfile, editCart, getCart, editReservation, getReservation } from '../controllers/users.js'
 import * as auth from '../middlewares/auth.js'
 
 const router = Router()
@@ -10,6 +10,8 @@ router.patch('/extend', auth.jwt, extend)
 router.get('/me', auth.jwt, getProfile)
 router.patch('/cart', auth.jwt, editCart)
 router.get('/cart', auth.jwt, getCart)
+router.patch('/reservation', auth.jwt, editReservation)
+router.get('/reservation', auth.jwt, getReservation)
 // register註冊   用戶提交資料（如用戶名密碼），並在資料庫中創建一個新的用戶記錄
 // login登入   使用用戶資訊來進行登入操作
 // logout登出
