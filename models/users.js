@@ -90,6 +90,13 @@ schema.virtual('cartQuantity')
     }, 0)
   })
 
+schema.virtual('reservationQuantity')
+  .get(function () {
+    return this.reservation.reduce((total, current) => {
+      return total + current.quantity
+    }, 0)
+  })
+
 schema.pre('save', async function (next) {
   // 存進資料庫之前，執行這個 function (箭頭函式沒有 this，要寫成一般的 function)
   const user = this

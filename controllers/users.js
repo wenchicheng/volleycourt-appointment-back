@@ -73,7 +73,7 @@ export const login = async (req, res) => {
 // 登出
 export const logout = async (req, res) => {
   try {
-    req.tokens = req.user.tokens.filter(token => token !== req.token)
+    req.tokens = req.user.tokens.filter((token) => token !== req.token)
     await req.user.save()
     res.status(StatusCodes.OK).json({
       success: true,
@@ -91,7 +91,7 @@ export const logout = async (req, res) => {
 // 舊換新
 export const extend = async (req, res) => {
   try {
-    const idx = req.user.tokens.findIndex(token => token === req.token)
+    const idx = req.user.tokens.findIndex((token) => token === req.token)
     const token = jwt.sign({ _id: req.user._id }, process.env.JWT_SECRET, { expiresIn: '7 da' })
     req.user.tokens[idx] = token
     await req.user.save()
@@ -139,7 +139,7 @@ export const editCart = async (req, res) => {
     if (!validator.isMongoId(req.body.product)) throw new Error('ID')
 
     // 尋找購物車內有沒有傳入的商品 ID
-    const idx = req.user.cart.findIndex(item => item.product.toString() === req.body.product)
+    const idx = req.user.cart.findIndex((item) => item.product.toString() === req.body.product)
     if (idx > -1) {
       // 修改購物車內已有的商品數量
       const quantity = req.user.cart[idx].quantity + parseInt(req.body.quantity)
@@ -215,24 +215,40 @@ export const getCart = async (req, res) => {
 // 編輯預約======================================================================
 export const editReservation = async (req, res) => {
   try {
-    // 檢查預約 id 格式是否正確
-    if (!validator.isMongoId(req.body.reservationId)) throw new Error('ID')
+    console.log('req.body', req.body)
+    console.log('req.body.appointment', req.body.appointment)
+    // 檢查預約 id 格式對不對
+    if (!validator.isMongoId(req.body.appointment)) throw new Error('ID')
 
-    // 尋找使用者預約列表中具有傳入的預約ID
-    const idx = req.user.reservation.findIndex(item => item.appointment.toString() === req.body.reservationId)
+    // 尋找check內有沒有傳入的預約ID
+    const idx = req.user.reservation.findIndex((item) => item.appointment.toString() === req.body.appointment)
     if (idx > -1) {
-      // 修改預約屬性
-      // 這裡假設您需要編輯預約的數量或其他屬性，根據實際需求進行修改
-      req.user.reservation[idx].quantity = req.body.quantity
+      // 修改check內已有的預約數量
+      const quantity = req.user.reservation[idx].quantity + parseInt(req.body.quantity)
+      // 檢查數量，小於 0移除，大於 0修改
+      if (quantity <= 0) {
+        req.user.reservation.splice(idx, 1)
+      } else {
+        req.user.reservation[idx].quantity = quantity
+      }
     } else {
-      // 如果找不到對應的預約，可能需要處理該情況，例如返回錯誤信息
-      throw new Error('NOT FOUND')
+      // 檢查預約時段是否存在或已下架
+      const appointment = await appointments.findById(req.body.appointment).orFail(new Error('NOT FOUND'))
+      if (!appointment.online) {
+        throw new Error('NOT FOUND')
+      } else {
+        req.user.reservation.push({
+          appointment: appointment._id,
+          quantity: req.body.quantity
+        })
+      }
     }
     await req.user.save()
     res.status(StatusCodes.OK).json({
       success: true,
-      message: '預約編輯成功',
-      result: req.user.reservation
+      message: '',
+      result: req.user.reservationQuantity
+      // 回傳check預約總數量
     })
   } catch (error) {
     console.log('editReservation error:', error)
@@ -244,7 +260,14 @@ export const editReservation = async (req, res) => {
     } else if (error.message === 'NOT FOUND') {
       res.status(StatusCodes.NOT_FOUND).json({
         success: false,
-        message: '未找到預約'
+        message: '查無商品'
+      })
+    } else if (error.name === 'ValidationError') {
+      const key = Object.keys(error.errors)[0]
+      const message = error.errors[key].message
+      res.status(StatusCodes.BAD_REQUEST).json({
+        success: false,
+        message
       })
     } else {
       res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
@@ -254,17 +277,14 @@ export const editReservation = async (req, res) => {
     }
   }
 }
-
 // 獲取預約列表
 export const getReservation = async (req, res) => {
   try {
-    // 使用使用者 ID 尋找使用者的預約列表
-    const user = await users.findById(req.user._id, 'cart').populate('reservation.appointment')
-
+    const result = await users.findById(req.user._id, 'reservation').populate('reservation.appointment')
     res.status(StatusCodes.OK).json({
       success: true,
       message: '',
-      result: user.reservation
+      result: result.reservation
     })
   } catch (error) {
     console.log(error)
